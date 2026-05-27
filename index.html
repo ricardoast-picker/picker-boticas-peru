@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Picker × Boticas Perú — Research Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      hsl(212 100% 97%);
+      --card:    hsl(0 0% 100%);
+      --card2:   hsl(214 33% 91%);
+      --border:  hsl(214 33% 91%);
+      --text:    hsl(229 35% 16%);
+      --sub:     hsl(222 18% 38%);
+      --muted:   hsl(216 30% 60%);
+
+      --celeste:     hsl(193 100% 45%);
+      --celeste-dim: hsl(193 100% 45% / .12);
+      --celeste-mid: hsl(193 100% 45% / .3);
+      --green:       hsl(162 100% 36%);
+      --green-dim:   hsl(162 100% 44% / .12);
+      --green-mid:   hsl(162 100% 44% / .3);
+      --green-text:  hsl(162 100% 28%);
+
+      --amber:    hsl(43 100% 45%);
+      --amber-bg: hsl(43 100% 67% / .15);
+      --red:      hsl(346 100% 45%);
+      --red-bg:   hsl(346 100% 63% / .1);
+      --navy:     hsl(229 35% 16%);
+    }
+
+    html, body { height: 100%; background: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--text); overflow: hidden; }
+    #deck { width: 100vw; height: 100vh; position: relative; }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 52px 72px;
+      opacity: 0; transform: translateX(36px);
+      transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1);
+      pointer-events: none; overflow: hidden;
+      background: var(--bg);
+    }
+    .slide.active  { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .slide.exit    { opacity: 0; transform: translateX(-36px); }
+
+    /* ── Nav ── */
+    #nav { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; z-index: 100; }
+    .nav-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; box-shadow: 0 1px 4px hsl(229 35% 16% / .08);
+    }
+    .nav-btn:hover { border-color: var(--celeste); color: var(--celeste); }
+    .nav-btn:disabled { opacity: .35; cursor: default; }
+    .nav-btn svg { width: 15px; height: 15px; }
+    #indicators { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .25s; cursor: pointer; }
+    .dot.on { background: var(--celeste); width: 22px; border-radius: 3px; }
+    #slide-num { position: fixed; top: 22px; right: 28px; font-size: 11px; color: var(--muted); letter-spacing: .05em; font-weight: 600; }
+
+    /* ── Type ── */
+    .tag {
+      display: inline-block; font-size: 10px; font-weight: 800;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--green-text); border: 1px solid var(--green-mid); background: var(--green-dim);
+      padding: 4px 12px; border-radius: 4px; margin-bottom: 18px;
+    }
+    .tag.blue  { color: var(--celeste); border-color: var(--celeste-mid); background: var(--celeste-dim); }
+    .tag.amber { color: var(--amber); border-color: hsl(43 100% 45% / .3); background: var(--amber-bg); }
+    .tag.red   { color: var(--red); border-color: hsl(346 100% 45% / .25); background: var(--red-bg); }
+
+    h1 { font-size: clamp(34px, 4.5vw, 58px); font-weight: 800; line-height: 1.07; color: var(--text); }
+    h2 { font-size: clamp(22px, 2.8vw, 38px); font-weight: 700; line-height: 1.15; color: var(--text); }
+    .sub { font-size: clamp(13px, 1.1vw, 15px); color: var(--sub); font-weight: 400; line-height: 1.65; }
+
+    /* ── Card ── */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; box-shadow: 0 1px 6px hsl(229 35% 16% / .06); }
+    .card-sm { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; box-shadow: 0 1px 4px hsl(229 35% 16% / .05); }
+    .card-accent  { background: var(--green-dim); border: 1px solid var(--green-mid); border-radius: 14px; padding: 24px 28px; }
+    .card-celeste { background: var(--celeste-dim); border: 1px solid var(--celeste-mid); border-radius: 14px; padding: 24px 28px; }
+    .card-amber   { background: var(--amber-bg); border: 1px solid hsl(43 100% 45% / .3); border-radius: 14px; padding: 24px 28px; }
+    .card-red     { background: var(--red-bg); border: 1px solid hsl(346 100% 45% / .25); border-radius: 14px; padding: 20px 24px; }
+
+    /* ── Grid ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+    .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; width: 100%; }
+
+    /* ── Stat ── */
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 1px 4px hsl(229 35% 16% / .05); }
+    .stat .val { font-size: clamp(22px, 2.8vw, 34px); font-weight: 800; color: var(--text); }
+    .stat .val.g { color: var(--green-text); }
+    .stat .val.b { color: var(--celeste); }
+    .stat .val.a { color: var(--amber); }
+    .stat .lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .stat .desc { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+    /* ── Table ── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    .tbl td { padding: 12px 14px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--border); color: var(--text); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl .green { color: var(--green-text) !important; font-weight: 700; }
+    .tbl .amber { color: var(--amber) !important; font-weight: 700; }
+    .tbl .red   { color: var(--red) !important; font-weight: 700; }
+
+    /* ── Misc ── */
+    .divider { width: 100%; height: 1px; background: var(--border); margin: 14px 0; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green-mid); }
+    .pill.b { background: var(--celeste-dim); color: var(--celeste); border-color: var(--celeste-mid); }
+    .pill.a { background: var(--amber-bg); color: var(--amber); border-color: hsl(43 100% 45% / .3); }
+    .picker-mark { font-size: 13px; font-weight: 800; letter-spacing: .07em; color: var(--celeste); }
+    .content { position: relative; z-index: 1; width: 100%; max-width: 1080px; }
+
+    /* ── Row list ── */
+    .row-list { display: flex; flex-direction: column; gap: 10px; }
+    .row-item { display: flex; align-items: flex-start; gap: 12px; font-size: 13.5px; font-weight: 500; color: var(--sub); line-height: 1.5; }
+    .row-dot { min-width: 7px; height: 7px; border-radius: 50%; background: var(--celeste); margin-top: 6px; }
+    .row-dot.g { background: var(--green); }
+    .row-dot.a { background: var(--amber); }
+    .row-dot.r { background: var(--red); }
+
+    /* ── MEDDPICC badge ── */
+    .med-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; font-size: 11px; font-weight: 900; }
+    .med-ok  { background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green-mid); }
+    .med-mid { background: var(--amber-bg); color: var(--amber); border: 1px solid hsl(43 100% 45% / .3); }
+    .med-no  { background: var(--red-bg); color: var(--red); border: 1px solid hsl(346 100% 45% / .25); }
+
+    /* ── Q card ── */
+    .q-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; }
+    .q-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--celeste-dim); border: 1px solid var(--celeste-mid); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--celeste); }
+    .q-text { font-size: 13px; font-weight: 500; color: var(--sub); line-height: 1.55; }
+  </style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- ─────────────── SLIDE 1 — COVER ─────────────── -->
+  <div class="slide active" id="s1">
+    <div class="content" style="display:flex;gap:64px;align-items:center;">
+      <div style="flex:1;">
+        <div class="tag">Research Brief · Intro Meeting</div>
+        <h1 style="margin-bottom:18px;">Boticas Perú</h1>
+        <p class="sub" style="max-width:480px;margin-bottom:32px;">
+          Tercer actor del mercado farmacéutico peruano. 330 tiendas, expansión acelerada a 400 y sin plataforma de última milla consolidada. El timing es perfecto.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <span class="pill b">ICP Fit: A</span>
+          <span class="pill">Primera reunión</span>
+          <span class="pill a">Contacto: Ana Porras</span>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="grid2" style="gap:14px;">
+          <div class="stat"><span class="val b">330</span><span class="lbl">Tiendas activas</span><span class="desc">Meta: 400 en 2026</span></div>
+          <div class="stat"><span class="val g">+25%</span><span class="lbl">Crecimiento H1 2025</span><span class="desc">vs mismo periodo 2024</span></div>
+          <div class="stat"><span class="val">S/300M</span><span class="lbl">Facturación 2024</span><span class="desc">Double-digit target 2025</span></div>
+          <div class="stat"><span class="val a">8%</span><span class="lbl">Market share</span><span class="desc">Target: double digits 2026</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 2 — LA EMPRESA ─────────────── -->
+  <div class="slide" id="s2">
+    <div class="content">
+      <div class="tag blue">La empresa</div>
+      <h2 style="margin-bottom:24px;">Corporación Boticas Perú</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Posición en el mercado</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>#3 en Perú</strong> — detrás de Inkafarma y Mifarma</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>100% capital nacional — sin deuda con grupos extranjeros</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>GM: <strong>Nelly Salcedo</strong></span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Más de 1,400 colaboradores</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Presencia geográfica</p>
+            <table class="tbl">
+              <thead><tr><th>Ciudad</th><th>Tiendas</th></tr></thead>
+              <tbody>
+                <tr><td>Lima</td><td><strong>105</strong></td></tr>
+                <tr><td>Chiclayo</td><td>18</td></tr>
+                <tr><td>Arequipa</td><td>8</td></tr>
+                <tr><td>Piura</td><td>7</td></tr>
+                <tr><td>Trujillo</td><td>7</td></tr>
+                <tr><td>Provincias (resto)</td><td class="green">~185 más →</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Plan de expansión</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>50–60 tiendas nuevas en 2025</strong> (vs 27 en 2024)</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Inversión S/6M en nuevos locales (2025)</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Foco: Apurímac, Ayacucho, Huancavelica, Puerto Maldonado</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>50% del negocio en provincias (hoy 38%)</span></div>
+            </div>
+          </div>
+          <div class="card-celeste">
+            <p style="font-size:11px;font-weight:700;color:var(--celeste);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Inversión en infraestructura</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot"></div><span>Nuevo almacén <strong>US$8M</strong> en Panamericana Sur (22m altura, 2,500 m²)</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Implementando ERP (almacén + contabilidad + RRHH)</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>IA en eficiencia de tiendas</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Dermocosmética: 35% de tiendas → meta 85%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 3 — CANAL DE DELIVERY / EL DOLOR ─────────────── -->
+  <div class="slide" id="s3">
+    <div class="content">
+      <div class="tag red">El dolor</div>
+      <h2 style="margin-bottom:22px;">Canal de delivery — sin orquestación</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Cómo operan hoy</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot r"></div><span><strong>Rappi y PedidosYa</strong> — canal principal de delivery. Dependen de terceros.</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Flota propia <strong>pequeña e informal</strong>: pedidos por WhatsApp (993-937-393) y teléfono</span></div>
+              <div class="row-item"><div class="row-dot r"></div><span><strong>Sin sistema de despacho propio</strong> — no hay fleet management ni tracking branded</span></div>
+              <div class="row-item"><div class="row-dot r"></div><span>E-commerce propio solo el <strong>7% de ventas</strong> — sin infraestructura de última milla para crecer</span></div>
+            </div>
+          </div>
+          <div class="card-red">
+            <p style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">El problema que viene</p>
+            <p style="font-size:13px;color:var(--sub);line-height:1.6;">
+              Están escalando a <strong>400 tiendas</strong> sin resolver última milla. Cada envío que va por Rappi/PedidosYa le cuesta margen, data del cliente y control de la experiencia.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Oportunidad Picker — estimado</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <div class="stat"><span class="val g">330</span><span class="lbl">Tiendas hoy</span></div>
+              <div class="stat"><span class="val g">~100K</span><span class="lbl">Envíos/mes potencial</span><span class="desc">@10 envíos/tienda/día</span></div>
+            </div>
+            <div class="divider"></div>
+            <p style="font-size:12px;color:var(--sub);line-height:1.55;">
+              Con 400 tiendas en 2026, capturando solo el <strong>30% del volumen</strong>, estaríamos sobre los <strong>30,000 envíos/mes</strong> — uno de los deals más grandes del portfolio.
+            </p>
+          </div>
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Ángulo de entrada (no competir)</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span>Picker <strong>no reemplaza Rappi/PedidosYa</strong> — los integra</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Usa las credenciales negociadas de Boticas Perú en esas plataformas</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Agrega: My Fleet, tracking branded, métricas centralizadas</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Orquestación = mismo ángulo que funcionó con ACO (El Corral + Papa John's)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 4 — ANA PORRAS ─────────────── -->
+  <div class="slide" id="s4">
+    <div class="content">
+      <div class="tag amber">Contacto</div>
+      <h2 style="margin-bottom:24px;">Ana Porras — Corporación Boticas Perú</h2>
+      <div class="grid2" style="gap:20px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Perfil</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Empresa</span>
+                <span style="font-size:13px;font-weight:700;">Corporación Boticas Perú S.A.C.</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">LinkedIn</span>
+                <span style="font-size:13px;font-weight:700;color:var(--celeste);">Confirmado ✓</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Cargo exacto</span>
+                <span style="font-size:13px;font-weight:700;color:var(--amber);">Confirmar en Hub ⚠</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+                <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Reuniones previas</span>
+                <span style="font-size:13px;font-weight:700;color:var(--red);">Ninguna — primera vez</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-amber">
+            <p style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Acción previa a la reunión</p>
+            <p style="font-size:13px;color:var(--sub);line-height:1.6;">Confirmar en el Hub el <strong>cargo exacto de Ana</strong> y el área que cubre (¿Operaciones? ¿Canales digitales? ¿Logística?). Eso define si es <strong>Champion</strong> o tiene poder de compra directo.</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Hipótesis de rol (a validar)</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span>Si es <strong>Ops / Logística / Canales Digitales</strong> → Champion ideal. Conoce el dolor, puede vender internamente.</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Si es <strong>Comercial</strong> → puede controlar el canal de ventas pero sin acceso directo a fleet ops.</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Economic Buyer probable: <strong>Nelly Salcedo (GM)</strong> o Director de Operaciones.</span></div>
+            </div>
+          </div>
+          <div class="card-celeste">
+            <p style="font-size:11px;font-weight:700;color:var(--celeste);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Contexto de construcción de relación</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot"></div><span>Sin historia previa — empezar desde cero con rapport fuerte</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Empresa en crecimiento agresivo → el timing del pitch es favorable</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Capital 100% peruano → valoran eficiencia y ROI concreto en soles</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 5 — MEDDPICC ─────────────── -->
+  <div class="slide" id="s5">
+    <div class="content">
+      <div class="tag">MEDDPICC — Estado inicial</div>
+      <h2 style="margin-bottom:22px;">Qué tenemos · Qué falta</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">M</span>
+          <span style="font-size:13px;font-weight:700;">Metrics</span>
+          <span style="font-size:12px;color:var(--sub);">No confirmado</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Preguntar: # envíos/mes, % canal propio vs Rappi, costo por envío hoy</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">E</span>
+          <span style="font-size:13px;font-weight:700;">Economic Buyer</span>
+          <span style="font-size:12px;color:var(--sub);">No mapeado</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Probable: Nelly Salcedo (GM) — confirmar proceso de alta proveedor</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">D</span>
+          <span style="font-size:13px;font-weight:700;">Decision Criteria</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">A mapear en la reunión — costo, integración, escalabilidad</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">D</span>
+          <span style="font-size:13px;font-weight:700;">Decision Process</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Preguntar: ¿quién más involucrado? ¿proceso de alta de proveedores?</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">P</span>
+          <span style="font-size:13px;font-weight:700;">Paper Process</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">No mapeado — preguntar en Discovery</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--green-dim);border:1px solid var(--green-mid);border-radius:10px;">
+          <span class="med-badge med-ok">I</span>
+          <span style="font-size:13px;font-weight:700;">Identify Pain</span>
+          <span style="font-size:12px;color:var(--green-text);font-weight:600;">Confirmado ✓</span>
+          <span style="font-size:12px;color:var(--sub);">Dependencia de Rappi/PedidosYa, sin tracking propio, escalando a 400 tiendas sin plataforma</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--amber-bg);border:1px solid hsl(43 100% 45% / .3);border-radius:10px;">
+          <span class="med-badge med-mid">C</span>
+          <span style="font-size:13px;font-weight:700;">Champion</span>
+          <span style="font-size:12px;color:var(--amber);font-weight:600;">Candidata ⚠</span>
+          <span style="font-size:12px;color:var(--sub);">Ana Porras — confirmar si opera el canal y puede vender internamente</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:40px 140px 1fr 1fr;gap:14px;align-items:center;padding:12px 16px;background:var(--amber-bg);border:1px solid hsl(43 100% 45% / .3);border-radius:10px;">
+          <span class="med-badge med-mid">C</span>
+          <span style="font-size:13px;font-weight:700;">Competition</span>
+          <span style="font-size:12px;color:var(--amber);font-weight:600;">Parcial ⚠</span>
+          <span style="font-size:12px;color:var(--sub);">Status quo = Rappi + PedidosYa. Verificar si evalúan otra plataforma de fleet management</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 6 — PREGUNTAS + PRÓXIMOS PASOS ─────────────── -->
+  <div class="slide" id="s6">
+    <div class="content">
+      <div class="tag blue">Intro Meeting — Playbook</div>
+      <h2 style="margin-bottom:22px;">Preguntas clave · Riesgos · Next steps</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">5 preguntas que no pueden faltar</p>
+          <div class="q-card"><div class="q-num">1</div><p class="q-text">¿Cuántos envíos a domicilio hacen hoy por mes? ¿Qué % va por canal propio vs Rappi/PedidosYa?</p></div>
+          <div class="q-card"><div class="q-num">2</div><p class="q-text">¿Cuántos repartidores propios tienen y cómo coordinan los despachos hoy?</p></div>
+          <div class="q-card"><div class="q-num">3</div><p class="q-text">¿Tienen sistema de tracking para el cliente final? ¿Cómo miden tiempos de entrega?</p></div>
+          <div class="q-card"><div class="q-num">4</div><p class="q-text">Con la expansión a 350–400 tiendas, ¿cómo están pensando escalar la operación de última milla?</p></div>
+          <div class="q-card"><div class="q-num">5</div><p class="q-text">¿Quién más está involucrado en decisiones de plataforma logística/delivery? ¿Cómo es el proceso de alta de nuevos proveedores?</p></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-red">
+            <p style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Riesgos</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot r"></div><span>Ana puede ser Champion pero <strong>no Economic Buyer</strong> → identificar quién aprueba presupuesto</span></div>
+              <div class="row-item"><div class="row-dot r"></div><span>Si volumen canal propio es muy bajo → el ejercicio financiero pierde fuerza. Preparar ángulo de marca y data del cliente.</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Reputación de Rappi en Perú: validar si tienen quejas similares a ACO Colombia (robos, cobros dobles)</span></div>
+            </div>
+          </div>
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Próximas acciones</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>Antes de la reunión:</strong> confirmar cargo exacto de Ana en el Hub</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>En la reunión:</strong> mapear MEDDPICC completo con las 5 preguntas</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>Outcome:</strong> agendar Discovery con demo en vivo de un envío</span></div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center;padding:16px;">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Etapa del deal</p>
+            <p style="font-size:18px;font-weight:800;color:var(--celeste);">Intro Meeting → Discovery</p>
+            <p style="font-size:12px;color:var(--sub);margin-top:4px;">Objetivo: calificar, generar confianza y agendar siguiente paso</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<!-- ── Navigation ── -->
+<div id="slide-num">1 / 6</div>
+<div id="nav">
+  <button class="nav-btn" id="prev" onclick="move(-1)" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div id="indicators"></div>
+  <button class="nav-btn" id="next" onclick="move(1)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+
+  const indWrap = document.getElementById('indicators');
+  slides.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' on':'');
+    d.onclick = () => go(i);
+    indWrap.appendChild(d);
+  });
+
+  function go(n) {
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('exit');
+    setTimeout(() => slides[cur < n ? cur : n+1]?.classList.remove('exit'), 420);
+    setTimeout(() => slides[cur].classList.remove('exit'), 420);
+    cur = n;
+    slides[cur].classList.add('active');
+    document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('on', i===cur));
+    document.getElementById('slide-num').textContent = `${cur+1} / ${total}`;
+    document.getElementById('prev').disabled = cur === 0;
+    document.getElementById('next').disabled = cur === total - 1;
+  }
+
+  function move(d) { if (cur+d >= 0 && cur+d < total) go(cur+d); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   move(-1);
+  });
+</script>
+</body>
+</html>
